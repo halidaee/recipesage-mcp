@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { searchRecipes, SearchRecipesParams } from '../../../src/tools/recipes';
+import {
+  searchRecipes,
+  getRecipe,
+  createRecipe,
+  updateRecipe,
+  deleteRecipe,
+  SearchRecipesParams,
+  GetRecipeParams,
+  CreateRecipeParams,
+  UpdateRecipeParams,
+  DeleteRecipeParams
+} from '../../../src/tools/recipes';
 import { RecipeSageClient } from '../../../src/client';
 import { AccountManager } from '../../../src/accounts';
 
@@ -61,5 +72,157 @@ describe('Recipe Search Tool', () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.type).toBe('network');
+  });
+});
+
+describe('Get Recipe Tool', () => {
+  let mockAccountManager: any;
+  let mockClient: any;
+
+  beforeEach(() => {
+    mockAccountManager = {
+      getAccount: vi.fn().mockReturnValue({ id: 'test' })
+    };
+  });
+
+  it('should get recipe by ID', async () => {
+    mockClient = {
+      getClient: vi.fn().mockResolvedValue({
+        recipes: {
+          getById: vi.fn().mockResolvedValue({
+            id: '1',
+            title: 'Pasta Carbonara',
+            ingredients: ['pasta', 'eggs', 'bacon'],
+            instructions: 'Cook pasta, mix with eggs and bacon'
+          })
+        }
+      })
+    };
+
+    const params: GetRecipeParams = { recipeId: '1' };
+    const result = await getRecipe(params, mockAccountManager, mockClient);
+
+    expect(result.success).toBe(true);
+    expect(result.recipe?.title).toBe('Pasta Carbonara');
+    expect(result.recipe?.ingredients).toHaveLength(3);
+  });
+
+  it('should return error for non-existent recipe', async () => {
+    mockClient = {
+      getClient: vi.fn().mockResolvedValue({
+        recipes: {
+          getById: vi.fn().mockRejectedValue(new Error('Recipe not found'))
+        }
+      })
+    };
+
+    const params: GetRecipeParams = { recipeId: '999' };
+    const result = await getRecipe(params, mockAccountManager, mockClient);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.type).toBe('not_found');
+  });
+});
+
+describe('Create Recipe Tool', () => {
+  let mockAccountManager: any;
+  let mockClient: any;
+
+  beforeEach(() => {
+    mockAccountManager = {
+      getAccount: vi.fn().mockReturnValue({ id: 'test' })
+    };
+
+    mockClient = {
+      getClient: vi.fn().mockResolvedValue({
+        recipes: {
+          create: vi.fn().mockResolvedValue({
+            id: 'new-123',
+            title: 'My New Recipe',
+            ingredients: ['ingredient 1'],
+            instructions: 'Step 1'
+          })
+        }
+      })
+    };
+  });
+
+  it('should create a new recipe', async () => {
+    const params: CreateRecipeParams = {
+      title: 'My New Recipe',
+      ingredients: ['ingredient 1'],
+      instructions: 'Step 1'
+    };
+    const result = await createRecipe(params, mockAccountManager, mockClient);
+
+    expect(result.success).toBe(true);
+    expect(result.recipe?.id).toBe('new-123');
+  });
+
+  it('should validate required fields', async () => {
+    const params: any = { title: 'No ingredients' };
+    const result = await createRecipe(params, mockAccountManager, mockClient);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.type).toBe('validation');
+  });
+});
+
+describe('Update Recipe Tool', () => {
+  let mockAccountManager: any;
+  let mockClient: any;
+
+  beforeEach(() => {
+    mockAccountManager = {
+      getAccount: vi.fn().mockReturnValue({ id: 'test' })
+    };
+
+    mockClient = {
+      getClient: vi.fn().mockResolvedValue({
+        recipes: {
+          update: vi.fn().mockResolvedValue({
+            id: '1',
+            title: 'Updated Title'
+          })
+        }
+      })
+    };
+  });
+
+  it('should update existing recipe', async () => {
+    const params: UpdateRecipeParams = {
+      recipeId: '1',
+      updates: { title: 'Updated Title' }
+    };
+    const result = await updateRecipe(params, mockAccountManager, mockClient);
+
+    expect(result.success).toBe(true);
+    expect(result.recipe?.title).toBe('Updated Title');
+  });
+});
+
+describe('Delete Recipe Tool', () => {
+  let mockAccountManager: any;
+  let mockClient: any;
+
+  beforeEach(() => {
+    mockAccountManager = {
+      getAccount: vi.fn().mockReturnValue({ id: 'test' })
+    };
+
+    mockClient = {
+      getClient: vi.fn().mockResolvedValue({
+        recipes: {
+          delete: vi.fn().mockResolvedValue({ success: true })
+        }
+      })
+    };
+  });
+
+  it('should delete recipe', async () => {
+    const params: DeleteRecipeParams = { recipeId: '1' };
+    const result = await deleteRecipe(params, mockAccountManager, mockClient);
+
+    expect(result.success).toBe(true);
   });
 });
