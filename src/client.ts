@@ -1,35 +1,37 @@
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AccountConfig } from './types/config.js';
 
-// Placeholder for Recipe Sage TRPC router type
-// Will be refined once we explore the actual API
-type RecipeSageRouter = any;
+export interface ApiClient {
+  get(path: string, params?: Record<string, string>): Promise<any>;
+  post(path: string, body?: any): Promise<any>;
+  put(path: string, body?: any): Promise<any>;
+  delete(path: string, body?: any): Promise<any>;
+}
 
-interface CachedClient {
-  client: ReturnType<typeof createTRPCClient<RecipeSageRouter>>;
-  token?: string;
+interface CachedEntry {
+  client: ApiClient;
+  token: string;
 }
 
 export class RecipeSageClient {
-  private clients: Map<string, CachedClient> = new Map();
-  private readonly apiUrl = 'https://www.recipesage.com/api';
+  private cache: Map<string, CachedEntry> = new Map();
+  private readonly apiUrl = 'https://api.recipesage.com';
 
-  async getClient(account: AccountConfig) {
-    const cached = this.clients.get(account.id);
+  async getClient(account: AccountConfig): Promise<ApiClient> {
+    const cached = this.cache.get(account.id);
     if (cached) {
       return cached.client;
     }
 
     const token = await this.authenticate(account);
-    const client = this.createTRPCClient(token);
+    const client = this.createApiClient(token);
 
-    this.clients.set(account.id, { client, token });
+    this.cache.set(account.id, { client, token });
     return client;
   }
 
-  private async authenticate(account: AccountConfig): Promise<string> {
+  async authenticate(account: AccountConfig): Promise<string> {
     try {
-      const response = await fetch(`${this.apiUrl}/users/login`, {
+      const response = await fetch(`${this.apiUrl}/trpc/users.login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -39,14 +41,23 @@ export class RecipeSageClient {
       });
 
       if (!response.ok) {
+        const text = await response.text();
+        let message = response.statusText;
+        try {
+          const err = JSON.parse(text);
+          message = err.error?.message || message;
+        } catch {}
         throw new Error(
-          `Authentication failed for account ${account.id}: ${response.statusText}`
+          `Authentication failed for account ${account.id}: ${message}`
         );
       }
 
-      const data = await response.json() as { token: string };
-      return data.token;
+      const data = await response.json() as { result: { data: { token: string } } };
+      return data.result.data.token;
     } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Authentication failed')) {
+        throw new Error(`Authentication error: ${error.message}`);
+      }
       if (error instanceof Error) {
         throw new Error(`Authentication error: ${error.message}`);
       }
@@ -54,24 +65,59 @@ export class RecipeSageClient {
     }
   }
 
-  private createTRPCClient(token: string) {
-    return createTRPCClient<RecipeSageRouter>({
-      links: [
-        httpBatchLink({
-          url: this.apiUrl,
-          headers: () => ({
-            authorization: `Bearer ${token}`
-          })
-        })
-      ]
-    });
+  private createApiClient(token: string): ApiClient {
+    const apiUrl = this.apiUrl;
+
+    async function request(method: string, path: string, body?: any, params?: Record<string, string>): Promise<any> {
+      const url = new URL(`${apiUrl}${path}`);
+      url.searchParams.set('token', token);
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          url.searchParams.set(k, v);
+        }
+      }
+
+      const options: RequestInit = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      if (body !== undefined && method !== 'GET') {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(url.toString(), options);
+
+      if (!response.ok) {
+        const text = await response.text();
+        let message = response.statusText;
+        try {
+          const err = JSON.parse(text);
+          message = err.error?.message || err.message || message;
+        } catch {}
+        throw new Error(message);
+      }
+
+      const text = await response.text();
+      if (!text) return {};
+      return JSON.parse(text);
+    }
+
+    return {
+      get: (path, params) => request('GET', path, undefined, params),
+      post: (path, body) => request('POST', path, body),
+      put: (path, body) => request('PUT', path, body),
+      delete: (path, body) => request('DELETE', path, body),
+    };
   }
 
   clearCache(accountId?: string): void {
     if (accountId) {
-      this.clients.delete(accountId);
+      this.cache.delete(accountId);
     } else {
-      this.clients.clear();
+      this.cache.clear();
     }
   }
 }

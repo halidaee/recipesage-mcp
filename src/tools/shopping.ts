@@ -9,8 +9,8 @@ export interface ShoppingList {
 
 export interface ShoppingListItem {
   id: string;
-  name: string;
-  checked: boolean;
+  title: string;
+  completed: boolean;
 }
 
 export interface ToolResult {
@@ -28,8 +28,8 @@ export async function listShoppingLists(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const response = await (client as any).shopping.list();
-    return { success: true, lists: response.lists };
+    const lists = await client.get('/shoppingLists');
+    return { success: true, lists };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
   }
@@ -43,7 +43,7 @@ export async function getShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const list = await (client as any).shopping.getById({ id: params.listId });
+    const list = await client.get(`/shoppingLists/${params.listId}`);
     return { success: true, list };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -58,7 +58,7 @@ export async function createShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const list = await (client as any).shopping.create({ title: params.title });
+    const list = await client.post('/shoppingLists', { title: params.title });
     return { success: true, list };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -73,7 +73,9 @@ export async function addToShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await (client as any).shopping.addItems({ listId: params.listId, items: params.items });
+    for (const item of params.items) {
+      await client.post(`/shoppingLists/${params.listId}`, { title: item });
+    }
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -88,7 +90,7 @@ export async function removeFromShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await (client as any).shopping.removeItem({ listId: params.listId, itemId: params.itemId });
+    await client.delete(`/shoppingLists/${params.listId}/items`, { itemIds: [params.itemId] });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -103,7 +105,7 @@ export async function deleteShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await (client as any).shopping.delete({ id: params.listId });
+    await client.delete(`/shoppingLists/${params.listId}`);
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };

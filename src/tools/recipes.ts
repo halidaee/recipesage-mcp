@@ -10,7 +10,7 @@ export interface Recipe {
   id: string;
   title: string;
   description?: string;
-  ingredients?: string[];
+  ingredients?: string;
   instructions?: string;
 }
 
@@ -33,11 +33,11 @@ export async function searchRecipes(
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
 
-    const response = await (client as any).recipes.search({ query: params.query });
+    const response = await client.get('/recipes/search', { query: params.query });
 
     return {
       success: true,
-      recipes: response.recipes
+      recipes: response.data || response
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -79,7 +79,7 @@ export async function getRecipe(
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
 
-    const recipe = await (client as any).recipes.getById({ id: params.recipeId });
+    const recipe = await client.get(`/recipes/${params.recipeId}`);
 
     return {
       success: true,
@@ -87,7 +87,7 @@ export async function getRecipe(
     };
   } catch (error) {
     if (error instanceof Error) {
-      const isNotFound = error.message.includes('not found');
+      const isNotFound = error.message.includes('not found') || error.message.includes('Not Found');
       return {
         success: false,
         error: {
@@ -109,8 +109,14 @@ export async function getRecipe(
 export interface CreateRecipeParams {
   title: string;
   description?: string;
-  ingredients: string[];
+  ingredients: string;
   instructions: string;
+  source?: string;
+  url?: string;
+  yield?: string;
+  activeTime?: string;
+  totalTime?: string;
+  notes?: string;
   account?: string;
 }
 
@@ -119,7 +125,6 @@ export async function createRecipe(
   accountManager: AccountManager,
   recipeSageClient: RecipeSageClient
 ): Promise<GetRecipeResult> {
-  // Validate required fields
   if (!params.title || !params.ingredients || !params.instructions) {
     return {
       success: false,
@@ -134,12 +139,8 @@ export async function createRecipe(
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
 
-    const recipe = await (client as any).recipes.create({
-      title: params.title,
-      description: params.description,
-      ingredients: params.ingredients,
-      instructions: params.instructions
-    });
+    const { account: _, ...body } = params;
+    const recipe = await client.post('/recipes', body);
 
     return {
       success: true,
@@ -180,10 +181,7 @@ export async function updateRecipe(
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
 
-    const recipe = await (client as any).recipes.update({
-      id: params.recipeId,
-      ...params.updates
-    });
+    const recipe = await client.put(`/recipes/${params.recipeId}`, params.updates);
 
     return {
       success: true,
@@ -220,7 +218,7 @@ export async function deleteRecipe(
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
 
-    await (client as any).recipes.delete({ id: params.recipeId });
+    await client.delete(`/recipes/${params.recipeId}`);
 
     return { success: true };
   } catch (error) {

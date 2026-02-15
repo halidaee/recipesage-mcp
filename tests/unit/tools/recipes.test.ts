@@ -11,11 +11,6 @@ import {
   UpdateRecipeParams,
   DeleteRecipeParams
 } from '../../../src/tools/recipes';
-import { RecipeSageClient } from '../../../src/client';
-import { AccountManager } from '../../../src/accounts';
-
-vi.mock('../../../src/client');
-vi.mock('../../../src/accounts');
 
 describe('Recipe Search Tool', () => {
   let mockAccountManager: any;
@@ -32,14 +27,15 @@ describe('Recipe Search Tool', () => {
 
     mockClient = {
       getClient: vi.fn().mockResolvedValue({
-        recipes: {
-          search: vi.fn().mockResolvedValue({
-            recipes: [
-              { id: '1', title: 'Pasta Carbonara', description: 'Classic Italian' },
-              { id: '2', title: 'Pasta Alfredo', description: 'Creamy pasta' }
-            ]
-          })
-        }
+        get: vi.fn().mockResolvedValue({
+          data: [
+            { id: '1', title: 'Pasta Carbonara', description: 'Classic Italian' },
+            { id: '2', title: 'Pasta Alfredo', description: 'Creamy pasta' }
+          ]
+        }),
+        post: vi.fn(),
+        put: vi.fn(),
+        delete: vi.fn(),
       })
     };
   });
@@ -50,7 +46,7 @@ describe('Recipe Search Tool', () => {
 
     expect(result.success).toBe(true);
     expect(result.recipes).toHaveLength(2);
-    expect(result.recipes[0].title).toBe('Pasta Carbonara');
+    expect(result.recipes![0].title).toBe('Pasta Carbonara');
   });
 
   it('should use specified account', async () => {
@@ -62,9 +58,7 @@ describe('Recipe Search Tool', () => {
 
   it('should handle API errors gracefully', async () => {
     mockClient.getClient.mockResolvedValue({
-      recipes: {
-        search: vi.fn().mockRejectedValue(new Error('Network error'))
-      }
+      get: vi.fn().mockRejectedValue(new Error('Network error')),
     });
 
     const params: SearchRecipesParams = { query: 'pasta' };
@@ -88,14 +82,12 @@ describe('Get Recipe Tool', () => {
   it('should get recipe by ID', async () => {
     mockClient = {
       getClient: vi.fn().mockResolvedValue({
-        recipes: {
-          getById: vi.fn().mockResolvedValue({
-            id: '1',
-            title: 'Pasta Carbonara',
-            ingredients: ['pasta', 'eggs', 'bacon'],
-            instructions: 'Cook pasta, mix with eggs and bacon'
-          })
-        }
+        get: vi.fn().mockResolvedValue({
+          id: '1',
+          title: 'Pasta Carbonara',
+          ingredients: 'pasta\neggs\nbacon',
+          instructions: 'Cook pasta, mix with eggs and bacon'
+        }),
       })
     };
 
@@ -104,15 +96,12 @@ describe('Get Recipe Tool', () => {
 
     expect(result.success).toBe(true);
     expect(result.recipe?.title).toBe('Pasta Carbonara');
-    expect(result.recipe?.ingredients).toHaveLength(3);
   });
 
   it('should return error for non-existent recipe', async () => {
     mockClient = {
       getClient: vi.fn().mockResolvedValue({
-        recipes: {
-          getById: vi.fn().mockRejectedValue(new Error('Recipe not found'))
-        }
+        get: vi.fn().mockRejectedValue(new Error('Recipe not found')),
       })
     };
 
@@ -135,14 +124,10 @@ describe('Create Recipe Tool', () => {
 
     mockClient = {
       getClient: vi.fn().mockResolvedValue({
-        recipes: {
-          create: vi.fn().mockResolvedValue({
-            id: 'new-123',
-            title: 'My New Recipe',
-            ingredients: ['ingredient 1'],
-            instructions: 'Step 1'
-          })
-        }
+        post: vi.fn().mockResolvedValue({
+          id: 'new-123',
+          title: 'My New Recipe',
+        }),
       })
     };
   });
@@ -150,7 +135,7 @@ describe('Create Recipe Tool', () => {
   it('should create a new recipe', async () => {
     const params: CreateRecipeParams = {
       title: 'My New Recipe',
-      ingredients: ['ingredient 1'],
+      ingredients: 'ingredient 1',
       instructions: 'Step 1'
     };
     const result = await createRecipe(params, mockAccountManager, mockClient);
@@ -179,12 +164,10 @@ describe('Update Recipe Tool', () => {
 
     mockClient = {
       getClient: vi.fn().mockResolvedValue({
-        recipes: {
-          update: vi.fn().mockResolvedValue({
-            id: '1',
-            title: 'Updated Title'
-          })
-        }
+        put: vi.fn().mockResolvedValue({
+          id: '1',
+          title: 'Updated Title'
+        }),
       })
     };
   });
@@ -212,9 +195,7 @@ describe('Delete Recipe Tool', () => {
 
     mockClient = {
       getClient: vi.fn().mockResolvedValue({
-        recipes: {
-          delete: vi.fn().mockResolvedValue({ success: true })
-        }
+        delete: vi.fn().mockResolvedValue({}),
       })
     };
   });

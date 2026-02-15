@@ -88,6 +88,29 @@ search_recipes({ query: "pasta", account: "family" })
 
 If omitted, uses the default account.
 
+## Troubleshooting
+
+This MCP server talks to the Recipe Sage API at `api.recipesage.com`. Recipe Sage is an open-source project ([github.com/julianpoy/RecipeSage](https://github.com/julianpoy/RecipeSage)) that is actively migrating from REST endpoints to tRPC. If things break, it likely means the API has changed upstream.
+
+### What to check
+
+1. **Authentication fails** - Login uses the tRPC endpoint `POST /trpc/users.login` with raw JSON `{ email, password }`. If this breaks, check whether the login procedure has moved or its input format changed. Look at `packages/trpc/src/procedures/users/` in the RecipeSage repo.
+
+2. **Recipe/shopping/meal calls fail** - These currently use REST endpoints (`/recipes`, `/shoppingLists`, `/mealPlans`). The maintainer is moving these to tRPC equivalents at `/trpc/recipes.*`, `/trpc/shoppingLists.*`, `/trpc/mealPlans.*`. If a REST endpoint returns 404, the tRPC version probably exists - check `packages/trpc/src/procedures/` in the repo for the current procedure names.
+
+3. **Auth token rejected ("must be logged in")** - The REST endpoints use `?token=` as a query parameter (not `Authorization: Bearer`). If this stops working, check how the RecipeSage frontend passes auth tokens - look at `packages/frontend/src/` for fetch calls.
+
+### Key files to update
+
+- `src/client.ts` - API base URL (`api.recipesage.com`), login endpoint, auth token handling
+- `src/tools/recipes.ts` - Recipe endpoint paths (`/recipes/search`, `/recipes/:id`, etc.)
+- `src/tools/shopping.ts` - Shopping list endpoint paths
+- `src/tools/meals.ts` - Meal plan endpoint paths
+
+### Migrating from REST to tRPC
+
+When a REST endpoint stops working, the tRPC equivalent typically accepts a raw JSON body at `POST /trpc/{router}.{procedure}`. For example, if `/recipes/search?query=pasta` breaks, try `POST /trpc/recipes.searchRecipes` with `{ query: "pasta" }` as the body. The tRPC response wraps data in `{ result: { data: ... } }`.
+
 ## Development
 
 ```bash

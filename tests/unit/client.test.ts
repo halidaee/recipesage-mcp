@@ -12,24 +12,26 @@ describe('RecipeSageClient', () => {
   let client: RecipeSageClient;
 
   beforeEach(() => {
-    // Mock fetch for authentication
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ token: 'test-token-123' })
+      text: async () => JSON.stringify({ result: { data: { token: 'test-token-123' } } }),
+      json: async () => ({ result: { data: { token: 'test-token-123' } } })
     });
 
     client = new RecipeSageClient();
   });
 
   it('should create a new client for an account', async () => {
-    const trpcClient = await client.getClient(mockAccount);
-    expect(trpcClient).toBeDefined();
+    const apiClient = await client.getClient(mockAccount);
+    expect(apiClient).toBeDefined();
+    expect(apiClient.get).toBeDefined();
+    expect(apiClient.post).toBeDefined();
   });
 
   it('should cache clients per account', async () => {
     const client1 = await client.getClient(mockAccount);
     const client2 = await client.getClient(mockAccount);
-    expect(client1).toBe(client2); // Same instance
+    expect(client1).toBe(client2);
   });
 
   it('should create separate clients for different accounts', async () => {
@@ -60,18 +62,18 @@ describe('RecipeSageClient Authentication', () => {
   };
 
   it('should authenticate and return token', async () => {
-    // Mock fetch for login endpoint
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ token: 'real-token-123' })
+      text: async () => JSON.stringify({ result: { data: { token: 'real-token-123' } } }),
+      json: async () => ({ result: { data: { token: 'real-token-123' } } })
     });
 
     const client = new RecipeSageClient();
-    const token = await client['authenticate'](mockAccount);
+    const token = await client.authenticate(mockAccount);
 
     expect(token).toBe('real-token-123');
     expect(fetch).toHaveBeenCalledWith(
-      'https://www.recipesage.com/api/users/login',
+      'https://api.recipesage.com/trpc/users.login',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -86,11 +88,12 @@ describe('RecipeSageClient Authentication', () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 401,
-      statusText: 'Unauthorized'
+      statusText: 'Unauthorized',
+      text: async () => '{"error":{"message":"Invalid credentials"}}'
     });
 
     const client = new RecipeSageClient();
-    await expect(client['authenticate'](mockAccount))
-      .rejects.toThrow('Authentication failed');
+    await expect(client.authenticate(mockAccount))
+      .rejects.toThrow('Authentication');
   });
 });

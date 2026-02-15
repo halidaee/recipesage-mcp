@@ -2,6 +2,10 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { AccountManager } from './accounts.js';
 import { RecipeSageClient } from './client.js';
 import { homedir } from 'os';
@@ -42,12 +46,12 @@ export function createServer(): Server {
   }
 
   // Register tool list handler
-  server.setRequestHandler('tools/list' as any, async () => {
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools: toolSchemas };
   });
 
   // Register tool call handler
-  server.setRequestHandler('tools/call' as any, async (request: any) => {
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
     let result: any;
