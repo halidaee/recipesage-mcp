@@ -24,7 +24,7 @@ export async function getMealPlan(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const response = await client.meals.getPlan({ startDate: params.startDate, endDate: params.endDate });
+    const response = await (client as any).meals.getPlan({ startDate: params.startDate, endDate: params.endDate });
     return { success: true, meals: response.meals };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -39,7 +39,7 @@ export async function addMealToPlan(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const meal = await client.meals.add({ date: params.date, recipeId: params.recipeId, mealType: params.mealType });
+    const meal = await (client as any).meals.add({ date: params.date, recipeId: params.recipeId, mealType: params.mealType });
     return { success: true, meal };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -54,7 +54,7 @@ export async function removeMealFromPlan(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await client.meals.remove({ id: params.mealId });
+    await (client as any).meals.remove({ id: params.mealId });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };

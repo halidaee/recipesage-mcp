@@ -44,7 +44,7 @@ export class RecipeSageClient {
         );
       }
 
-      const data = await response.json();
+      const data = await response.json() as { token: string };
       return data.token;
     } catch (error) {
       if (error instanceof Error) {

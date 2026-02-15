@@ -28,7 +28,7 @@ export async function listShoppingLists(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const response = await client.shopping.list();
+    const response = await (client as any).shopping.list();
     return { success: true, lists: response.lists };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -43,7 +43,7 @@ export async function getShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const list = await client.shopping.getById({ id: params.listId });
+    const list = await (client as any).shopping.getById({ id: params.listId });
     return { success: true, list };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -58,7 +58,7 @@ export async function createShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    const list = await client.shopping.create({ title: params.title });
+    const list = await (client as any).shopping.create({ title: params.title });
     return { success: true, list };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -73,7 +73,7 @@ export async function addToShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await client.shopping.addItems({ listId: params.listId, items: params.items });
+    await (client as any).shopping.addItems({ listId: params.listId, items: params.items });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -88,7 +88,7 @@ export async function removeFromShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await client.shopping.removeItem({ listId: params.listId, itemId: params.itemId });
+    await (client as any).shopping.removeItem({ listId: params.listId, itemId: params.itemId });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -103,7 +103,7 @@ export async function deleteShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await client.shopping.delete({ id: params.listId });
+    await (client as any).shopping.delete({ id: params.listId });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
