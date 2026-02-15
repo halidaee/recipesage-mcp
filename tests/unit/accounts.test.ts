@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AccountConfig, RecipeSageConfig, validateConfig } from '../../src/types/config';
+import { AccountManager } from '../../src/accounts';
+import { writeFileSync, mkdirSync, rmSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 describe('Account Config Types', () => {
   it('should validate a valid config with single account', () => {
@@ -37,5 +41,43 @@ describe('Account Config Types', () => {
       accounts: [{ id: 'test', password: 'pass', default: true }]
     };
     expect(() => validateConfig(config as any)).toThrow('Missing required field');
+  });
+});
+
+describe('AccountManager', () => {
+  const testConfigDir = join(tmpdir(), 'recipesage-mcp-test');
+  const testConfigPath = join(testConfigDir, 'accounts.json');
+
+  beforeEach(() => {
+    mkdirSync(testConfigDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(testConfigDir, { recursive: true, force: true });
+  });
+
+  it('should load valid config from file', () => {
+    const config = {
+      accounts: [
+        { id: 'test', email: 'test@example.com', password: 'pass123', default: true }
+      ]
+    };
+    writeFileSync(testConfigPath, JSON.stringify(config));
+
+    const manager = new AccountManager(testConfigPath);
+    manager.loadAccounts();
+
+    expect(manager.getAccount('test')).toEqual(config.accounts[0]);
+  });
+
+  it('should throw if config file does not exist', () => {
+    const manager = new AccountManager('/nonexistent/path.json');
+    expect(() => manager.loadAccounts()).toThrow('Config file not found');
+  });
+
+  it('should throw if config file has invalid JSON', () => {
+    writeFileSync(testConfigPath, 'invalid json{');
+    const manager = new AccountManager(testConfigPath);
+    expect(() => manager.loadAccounts()).toThrow('Invalid JSON');
   });
 });
