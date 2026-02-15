@@ -60,4 +60,11 @@ export class AccountManager {
   getDefaultAccountId(): string | undefined {
     return this.defaultAccountId;
   }
+
+  setDefaultAccount(accountId: string): void {
+    if (!this.accounts.has(accountId)) {
+      throw new Error(`Account not found: ${accountId}`);
+    }
+    this.defaultAccountId = accountId;
+  }
 }
