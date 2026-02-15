@@ -4,7 +4,7 @@ export interface ApiClient {
   get(path: string, params?: Record<string, string>): Promise<any>;
   post(path: string, body?: any): Promise<any>;
   put(path: string, body?: any): Promise<any>;
-  delete(path: string, body?: any): Promise<any>;
+  delete(path: string, params?: Record<string, string>): Promise<any>;
 }
 
 interface CachedEntry {
@@ -109,7 +109,7 @@ export class RecipeSageClient {
       get: (path, params) => request('GET', path, undefined, params),
       post: (path, body) => request('POST', path, body),
       put: (path, body) => request('PUT', path, body),
-      delete: (path, body) => request('DELETE', path, body),
+      delete: (path, params) => request('DELETE', path, undefined, params),
     };
   }
 

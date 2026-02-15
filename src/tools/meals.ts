@@ -55,7 +55,7 @@ export async function addMealToPlan(
 
     const meal = await client.post(`/mealPlans/${mealPlanId}`, {
       title: params.mealType,
-      scheduledDate: params.date,
+      scheduled: params.date,
       meal: params.mealType,
       recipeId: params.recipeId
     });
@@ -84,7 +84,7 @@ export async function removeMealFromPlan(
       }
     }
 
-    await client.delete(`/mealPlans/${mealPlanId}/items`, { itemIds: [params.mealId] });
+    await client.delete(`/mealPlans/${mealPlanId}/items/bulk`, { itemIds: params.mealId });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };

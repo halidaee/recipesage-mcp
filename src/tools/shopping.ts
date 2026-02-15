@@ -73,9 +73,9 @@ export async function addToShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    for (const item of params.items) {
-      await client.post(`/shoppingLists/${params.listId}`, { title: item });
-    }
+    await client.post(`/shoppingLists/${params.listId}`, {
+      items: params.items.map(title => ({ title }))
+    });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
@@ -90,7 +90,7 @@ export async function removeFromShoppingList(
   try {
     const account = accountManager.getAccount(params.account);
     const client = await recipeSageClient.getClient(account);
-    await client.delete(`/shoppingLists/${params.listId}/items`, { itemIds: [params.itemId] });
+    await client.delete(`/shoppingLists/${params.listId}/items`, { itemIds: params.itemId });
     return { success: true };
   } catch (error) {
     return { success: false, error: { type: 'unknown', message: (error as Error).message } };
