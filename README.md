@@ -46,17 +46,32 @@ chmod 600 ~/.config/recipesage-mcp/accounts.json
 
 ## Claude Code Configuration
 
-Add to `~/.claude/config.json`:
+Add to `~/.claude/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "recipesage": {
       "command": "node",
-      "args": ["/absolute/path/to/recipesage-mcp/dist/index.js"]
+      "args": ["/Users/halidaee/recipesage_mcp/dist/index.js"]
     }
   }
 }
+```
+
+Or create the file if it doesn't exist:
+
+```bash
+cat > ~/.claude/mcp.json << 'EOF'
+{
+  "mcpServers": {
+    "recipesage": {
+      "command": "node",
+      "args": ["/Users/halidaee/recipesage_mcp/dist/index.js"]
+    }
+  }
+}
+EOF
 ```
 
 ## Available Tools
