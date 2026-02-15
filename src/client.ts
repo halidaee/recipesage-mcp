@@ -28,9 +28,30 @@ export class RecipeSageClient {
   }
 
   private async authenticate(account: AccountConfig): Promise<string> {
-    // TODO: Implement actual authentication
-    // For now, return mock token to satisfy tests
-    return 'mock-token';
+    try {
+      const response = await fetch(`${this.apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: account.email,
+          password: account.password
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Authentication failed for account ${account.id}: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      return data.token;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Authentication error: ${error.message}`);
+      }
+      throw error;
+    }
   }
 
   private createTRPCClient(token: string) {
