@@ -169,7 +169,7 @@ export const toolSchemas = [
   },
   {
     name: 'add_meal_to_plan',
-    description: 'Add a meal to the meal plan',
+    description: 'Add a meal to the meal plan. Returns the meal item with an id field that should be used for removal.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -187,11 +187,11 @@ export const toolSchemas = [
   },
   {
     name: 'remove_meal_from_plan',
-    description: 'Remove a meal from the plan',
+    description: 'Remove a meal from the plan. Use the meal.id returned from add_meal_to_plan.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        mealId: { type: 'string', description: 'Meal plan item ID' },
+        mealId: { type: 'string', description: 'Meal plan item ID (from add_meal_to_plan response)' },
         account: { type: 'string', description: 'Account ID (optional)' }
       },
       required: ['mealId']

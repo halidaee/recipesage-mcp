@@ -102,7 +102,14 @@ export class RecipeSageClient {
 
       const text = await response.text();
       if (!text) return {};
-      return JSON.parse(text);
+
+      // Handle plain text responses (e.g., "OK" from delete endpoints)
+      try {
+        return JSON.parse(text);
+      } catch {
+        // If not JSON, return the text as-is for successful responses
+        return { message: text };
+      }
     }
 
     return {
