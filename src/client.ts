@@ -12,7 +12,7 @@ interface CachedClient {
 
 export class RecipeSageClient {
   private clients: Map<string, CachedClient> = new Map();
-  private readonly apiUrl = 'https://recipesage.com/api';
+  private readonly apiUrl = 'https://www.recipesage.com/api';
 
   async getClient(account: AccountConfig) {
     const cached = this.clients.get(account.id);
@@ -29,7 +29,7 @@ export class RecipeSageClient {
 
   private async authenticate(account: AccountConfig): Promise<string> {
     try {
-      const response = await fetch(`${this.apiUrl}/auth/login`, {
+      const response = await fetch(`${this.apiUrl}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

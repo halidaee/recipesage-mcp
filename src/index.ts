@@ -12,6 +12,7 @@ import * as recipeTools from './tools/recipes.js';
 import * as shoppingTools from './tools/shopping.js';
 import * as mealTools from './tools/meals.js';
 import * as accountTools from './tools/accounts.js';
+import { toolSchemas } from './schemas.js';
 
 const CONFIG_PATH = join(homedir(), '.config', 'recipesage-mcp', 'accounts.json');
 
@@ -40,7 +41,12 @@ export function createServer(): Server {
     process.exit(1);
   }
 
-  // Register tool handlers
+  // Register tool list handler
+  server.setRequestHandler('tools/list' as any, async () => {
+    return { tools: toolSchemas };
+  });
+
+  // Register tool call handler
   server.setRequestHandler('tools/call' as any, async (request: any) => {
     const { name, arguments: args } = request.params;
 

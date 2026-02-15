@@ -71,7 +71,7 @@ describe('RecipeSageClient Authentication', () => {
 
     expect(token).toBe('real-token-123');
     expect(fetch).toHaveBeenCalledWith(
-      'https://recipesage.com/api/auth/login',
+      'https://www.recipesage.com/api/users/login',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
